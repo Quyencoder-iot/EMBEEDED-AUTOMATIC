@@ -1,1 +1,97 @@
+Bài 01: Introduction and Environment Setup
+🔰 Introduction to STM32 and Microcontrollers
+🔰 Setting up the Development Environment and Necessary Tools
+🔰 Programming using registers
+
+Khi vào uVision. Giao diện trong mục project có 4 tab: Project (viết code), Book (Tài liệu vdk), Function (các hàm cho lâp trình), 
+ 
+Trong Debug chọn ST-Link Debbuger (usb nạp code cho stm32)
+ 
+Lưu ý khi kết nối với ST-Link nếu trong mục Serial Number hiện ra Serial của ST link là kết nối thành công. Trong mục SWDIO thấy hiện dòng mã chương trình nào đó là kết nối thành công đến vi điều khiển.
+ 
+ 
+Arm Complier chon Version 5 cho đỡ lỗi, nếu ver cao hơn 6, 7 cũng chuyển về 5.
+ 
+ 
+Sơ đồ khối của vi điều khiển stm32
+ 
+Để làm việc với một phần cứng cần 3 bước:
+-	Cấp xung clock cho ngoại vi 
+-	Cấu hình chân cho ngoại vi
+-	Sử dụng ngoại vi
+Vi điều khiển sẽ cấp xung nhịp cho ngoại vi để nó có thể hoạt động. khi gặp cạnh lên hoặc cạnh xuống xung nhịp nó sẽ thực hiện 1 công việc nào đó. Không cấp clock ngoại vi sẽ không hoạt động.
+Để cấp clock cho ngoại vi phải làm việc với thanh ghi RCC
+ 
+Cấp clock từ RCC=> Bus => Ngoại vi=> chân ngoại vi
+Ngoại vi có 3 đường bus: Bus hệ thống AHB, 2 đường bus đến ngoại vi là APB1, APB2.
+Ví dụ để nháy Led PC13 : P: Pin, C: Port C, 13 : chân thứ 13 trong Port C (0…15)
+ 
+Cấp clock qua thanh ghi RCC_ABP2ENR
+
+ 
+Các cấp clock ghi bit tương ứng của ngoại vi đó lên 1. Muốn disable ngoại vi chỉ cần ghi 0 vào.
+
+Mỗi phần cứng trên thiết bị đều được điều khiển bằng thanh ghi tương ứng. STM32 có khoảng 23-25 thanh ghi khác nhau.
+Mỗi ngoại vi được cấp phát một vùng nhớ với dải địa chị tương ứng. nên trước khi làm việc vs ngoại vi cần xem nó nằm ở khu nhớ nào
+Bước thấp nhất của lập trình là viết thẳng giá trị vào thanh ghi
+Ví dụ muốn làm việc thanh ghi PortA GPIOx_CRH 
+Address offset: 0x04 : Độ dời địa chỉ của thanh ghi so mới Địa chỉ gốc của ngoại vi GPIO.
+Địa chỉ gốc GPIO Port A : 0x 4001 0800 + offset 0x04 = 0x 4001 0804 : Đây chính là địa chỉ thanh ghi CRH của Port A. 
+Reset value: 0x4444 4444 : Giá trị sau khi reset thanh ghi
+ 
+Để nhìn nhanh Offset của từng loại thanh ghi vào Register map của ngoại vi đó.
+ 
+Cách lấy giá trị trong thanh ghi và vùng nhớ:
+-	Lấy địa chỉ thanh ghi hay vùng nhớ (VD: 0x4002 1018).
+-	 Ép kiểu cho nó thành kiểu con trỏ (VD: usigned int*)
+-	Sau đó dùng phép toán dereference * để lấy giá trị của nó. 
+Ví dụ: #define RCC_APB2ENR *(usigned int*) 0x4002 1018.
+Int là kiểu số 32 bit
+Để ghi giá trị vào thanh ghi mà không ảnh hưởng đến các bit địa chỉ khác dùng kỹ thuật bitmask. Tạo mặt nạ bitmask và Dùng phép toán OR: a |=b, a = a|b.
+Ví dụ : Để cấp clock cho Port C (IOPC). nó là bit số 4
+Như bảng bên dưới, a là giá trị ban đầu thanh ghi, b là bitmask : (1<<4): Số 1 dịch trái 4 lần
+RCC_APB2ENR |= (1<<4); ( cấp clock cho gpio C thành công).
+ 
+Bước 2: Cấu Hình Chân cho ngoại Vi.
+B1: Cấp clock cho chân PC13.
+GPIO.C có 16 chân. Dùng 2 thanh ghi GPIOx_CRL (Điều khiển chân 0-7) và GPIOx_CRH (chân 8-15). Chân PC13 là chân thứ 13 nên dùng thanh ghi GPIOx_CRH điều khiển. cũng dùng kỹ thuật bitmask để đổi giá trị 0-1 cho nó.
+ 
+#define GPIOx_CRH *(unsigned int*) 0x4001 1004
+GPIOx_CRH |= (1<<13);
+B2. Cấu hình chế độ hoạt động cho chân (Configuraton).
+ 
+1.Mode [1:0]: Cấu hình chế độ input hay output (ghi tín hiệu điện áp ra). Output (có 3 lựa chọn tốc độ  maxspeed 10MHz, 2MHz, 50 MHz).
+2.CNFy[1:0]: Cặp bít này quyết định đọc tín hiệu input, output thì đọc theo kiểu nào. Mỗi mode có 4 kiểu đọc ghi.
+Input (Mode[1:0]=00): chọn kiểu:
+00: Đọc ra tín hiệu tương tự-analog, 
+01: Đọc tín hiệu điện áp thông thường Floating input- mức điện áp lơ lửng, 
+10: Điện trở kéo chân lên Vcc (pull up)/hoặc kéo tín hiệu xuống GND (pull down). Giúp chân có mức điện áp ổn định.
+Output (Mode[1:0] = 01,10, or 11):
+General Purpose : Kiểu đa dụng làm gì cũng được.
+Alternate Function: Kiểu thay thế (truyền dữ liệu, xử lý tín hiệu nào đó trong bộ bộ UART, I2C, SPI)
+Push Pull : giúp tại một thời điểm luôn có 1 mức điện áp cố định (=0 hoặc =1)
+Open Drain: Nếu chân bạn điều khiển thì nó hạ xuống mức 0, không điều khiển thì nó sẽ lơ lửng không có mức điện áp cố định)
+Để điều khiển Led PC13: 
+Chú ý Anode của nó nối lên VCC3 (3V), Cathode nối vào PC13. Muốn nó sáng hạ PC13 về 0 (0V), Tắt thì đẩy PC13 lên 1 (3V). Như vậy PC13 phải là 1 chân ghi tín hiệu điện áp ra output.
+ 
+Cấu hình cho chân này ta sử dụng Thanh ghi GPIO_CRH. Cấu hình trên Mode 13 & CNF 13.
+Mode : 11, CNF: 00.  Nhiệm vụ ghi vào bit 23, 22, 21. 20 các bit 0011 = 3. Phép dịch bit số 1 lúc  đầu sẽ nằm vị trí bit O.bitmask=( 3<<20) các bit sẽ vào vị trí như trên.
+GPIO_CRH |= (3<<20).
+
+Các làm đơn lẻ cho bit 00 ở vị trí 23, 22.
+Cũng dịch bit 1 vào 2 vị trí trên. Xong dùng phép đảo bit 1=>0. Thực hiện phép AND & để biến hết các bit ở ô 23, 22 về 0.
+GPIO_CRH &= ~ ((1<<23)|(1<<22))
+~ : phép đảo bit, & là AND, = : gán bằng
+ 
+Bước 3: Đưa tín hiệu ra chân PC13. Dùng thanh ghi ODR.
+#define GPIO_ODR *(unsigned int*) 0x4001 100C
+GPIO_ODR |= (1<<13);
+Delay (1.000.000);
+GPIO_ODR &= ~(1<<13); \\ Đảo bit 1 thành 0 và dùng phép &
+Delay (1.000.000);
+ 
+Đăt Break Point,
+Những chỗ xám xám có thể đặt break point. Để khi chương trình chạy đến đó nó sẽ dừng.
+
+3.5 Xây dựng cấu trúc thanh ghi của các ngoại vi (Struct)
 
