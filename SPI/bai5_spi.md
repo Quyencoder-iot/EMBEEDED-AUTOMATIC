@@ -11,7 +11,7 @@ Trạng thái IDLE : chân SS = 0 và chân SCK =0.
 Các kiểu truyền dữ liệu : 
 -	Song công, data truyền 2 chiều trên đường dây MOSI va MISO bởi cả master và slave
 -	Bán song công, chỉ truyền từ master tới slave
- 
+ ![image](https://github.com/user-attachments/assets/0e6370f1-767d-43c6-aa52-e0ffaa43bc38)
 
 Đối với MASTER : 
 SCK, MOSI, CS là Output => Cấu hình Mode output kiểu Push Pull 
@@ -47,23 +47,25 @@ Mỗi loại ngoại vi được định nghĩa thành 1 struct, nên search t�
 STM32 có 2 phần cứng SPI: SPI1 và SPI2
 -	 SPI1 trên bus APB2, SPI 2 trên bus APB1.
 -	Chân MOSI, MISO, SCK, NSS hoạt đông ở mode AF (Alternative Function)
- 
+ ![image](https://github.com/user-attachments/assets/06efd054-8e60-4dd7-9edc-cbd4352c0873)
+
 Kiểm tra trong “pin definitions” table .Khi cấp clock cho SPI thì 4 chân đầu ra sẽ được kết nối mặc định đến các chân nào. như bảng dưới là NSS, SCK, MISO, MOSI lần lượt nối ra PA4,5,6,7 của GPIOA.
- 
+ ![image](https://github.com/user-attachments/assets/50291a2c-43b3-436c-bce6-8f359dfd2eb6)
+
 Nếu bật cùng lúc nhiều ngoại vi như ADC, SPI, USART cần remap lại các chân thì ta dùng thanh ghi AFIO_MAPR. 
 Ví dụ set bit 0 của thanh ghi lên 1 thì ta đã remap chân của SPI 1 
 0: No remap (NSS/PA4, SCK/PA5, MISO/PA6, MOSI/PA7)
 1: Remap (NSS/PA15, SCK/PB3, MISO/PB4, MOSI/PB5)
- 
- 
+ ![image](https://github.com/user-attachments/assets/71325134-9181-4c53-aa11-2e1ac0b258d2)
+![image](https://github.com/user-attachments/assets/d3747ce9-e8ad-415e-8fe5-c51b82494d8c)
 
 Tương tự các ngoại vi khác, các tham số SPI được cấu hình trong Struct SPI_InitTypeDef:
- 
+ ![image](https://github.com/user-attachments/assets/b526fc01-b659-4eed-8331-0f5c9d1cc3e7)
+
 •	SPI_Mode: Quy định chế độ hoạt động của thiết bị SPI (Master or Slave)
  
 •	SPI_Direction: Quy định kiểu truyền của thiết bị (FullDuplex, RxOnly,RX,TX)
  
-
 •	SPI_BaudRatePrescaler: Hệ số chia clock cấp cho Module SPI (2,4,8,16,…,256-chia hệ số theo hàm mũ của 2)
  
 •	SPI_CPOL: Cấu hình cực tính (Polary) của SCK . Có 2 chế độ:
