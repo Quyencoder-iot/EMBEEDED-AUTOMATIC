@@ -58,22 +58,41 @@ Ví dụ set bit 0 của thanh ghi lên 1 thì ta đã remap chân của SPI 1
  
 
 Tương tự các ngoại vi khác, các tham số SPI được cấu hình trong Struct SPI_InitTypeDef:
-•	SPI_Mode: Quy định chế độ hoạt động của thiết bị SPI. 
-•	SPI_Direction: Quy định kiểu truyền của thiết bị.
-•	SPI_BaudRatePrescaler: Hệ số chia clock cấp cho Module SPI.
-•	SPI_CPOL: Cấu hình cực tính của SCK . Có 2 chế độ:
-•	SPI_CPOL_Low: Cực tính mức 0 khi SCK không truyền xung.
-•	SPI_CPOL_High: Cực tính mức 1 khi SCK không truyền xung.
-•	SPI_CPHA: Cấu hình chế độ hoạt động của SCK. Có 2 chế độ:
-•	SPI_CPHA_1Edge: Tín hiệu truyền đi ở cạnh xung đầu tiên.
-•	SPI_CPHA_2Edge: Tín hiệu truyền đi ở cạnh xung thứ hai.
+ 
+•	SPI_Mode: Quy định chế độ hoạt động của thiết bị SPI (Master or Slave)
+ 
+•	SPI_Direction: Quy định kiểu truyền của thiết bị (FullDuplex, RxOnly,RX,TX)
+ 
+
+•	SPI_BaudRatePrescaler: Hệ số chia clock cấp cho Module SPI (2,4,8,16,…,256-chia hệ số theo hàm mũ của 2)
+ 
+•	SPI_CPOL: Cấu hình cực tính (Polary) của SCK . Có 2 chế độ:
+-	SPI_CPOL_Low: Cực tính mức 0 khi SCK không truyền xung.
+-	SPI_CPOL_High: Cực tính mức 1 khi SCK không truyền xung.
+(Thường chọn mức CPOL mức 0)
+ 
+•	SPI_CPHA: Cấu hình hoạt động ở pha (phase) nào của SCK. Có 2 chế độ:
+-	SPI_CPHA_1Edge: Tín hiệu truyền đi ở cạnh xung đầu tiên (pha 1 lên).
+-	SPI_CPHA_2Edge: Tín hiệu truyền đi ở cạnh xung thứ hai (pha 2 xuống)
+ 
 •	SPI_DataSize: Cấu hình số bit truyền. 8 hoặc 16 bit.
+ 
 •	SPI_FirstBit: Cấu hình chiều truyền của các bit là MSB hay LSB.
+Ví dụ truyền data 8 bit data = 0x80 = 0b1000 0000. MSB = Most Significant Bit = 1 : Bit có trọng số cao nhất(bít đầu bên trái)  , LSB = Least Significant bit = 0 (bit có trọng số thấp nhất (bit đầu bên phải).
+ 
 •	SPI_CRCPolynomial: Cấu hình số bit CheckSum cho SPI.
+ 
 •	SPI_NSS: Cấu hình chân SS là điều khiển bằng thiết bị hay phần mềm.
+ 
 •	Hàm SPI_I2S_SendData(SPI_TypeDef* SPIx, uint16_t Data), tùy vào cấu hình datasize là 8 hay 16 bit sẽ truyền đi 8 hoặc 16 bit dữ liệu. Hàm nhận 2 tham số là bộ SPI sử dụng và data cần truyền.
-•	Hàm SPI_I2S_ReceiveData(SPI_TypeDef* SPIx) trả về giá trị đọc được trên SPIx. Hàm trả về 8 hoặc 16 bit data.
-•	Hàm SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG) trả về giá trị 1 cờ trong thanh ghi của SPI. Các cờ thường được dùng:
-•	SPI_I2S_FLAG_TXE: Cờ báo truyền, cờ này sẽ set lên 1 khi truyền xong data trong buffer.
-•	SPI_I2S_FLAG_RXNE: Cờ báo nhận, cờ này set lên 1 khi nhận xong data.
-•	SPI_I2S_FLAG_BSY: Cờ báo bận,set lên 1 khi SPI đang bận truyền nhận.
+Bản chất việc truyền là chính là ghi Data vào thanh ghi DR
+ 
+•	Hàm SPI_I2S_ReceiveData(SPI_TypeDef* SPIx) trả về giá trị đọc được trên SPIx. Hàm trả về 8 hoặc 16 bit data
+Bản chất hàm nhận là đọc Data từ thanh ghi DR ra.
+ 
+•	Hàm SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG) trả về giá trị 1 cờ trạng thái trong thanh ghi của SPI. 
+Trong phần cứng SPI có 1 bộ đệm Transmit Buffer chứa data trước khi truyền đi chính là thanh ghi DR, nếu dữ liệu chưa truyền đi mà ta ghi data mới vào thì data cũ sẽ bị mất đi, bởi vậy phải kiểm tra cờ trạng thái xem thanh ghi DR còn trống không trước khi truyền. Các cờ thường được dùng:
+-	SPI_I2S_FLAG_TXE: Cờ báo truyền, cờ này sẽ set lên 1 khi truyền xong data trong buffer.
+-	SPI_I2S_FLAG_RXNE: Cờ báo nhận, cờ này set lên 1 khi nhận xong data.
+-	SPI_I2S_FLAG_BSY: Cờ báo bận,set lên 1 khi SPI đang bận truyền nhận.
+
